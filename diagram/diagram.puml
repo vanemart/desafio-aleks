@@ -1,0 +1,61 @@
+@startuml
+scale 1.5
+!$GREEN = "#c9ffc9"
+!$ORANGE = "#f8e7c0"
+!$BLUE = "#c2f0ff"
+!$YELLOW = "#ffffcc"
+!$PURPLE = "#e9daf9"
+!$RED = "#ffe0e0"
+
+title "Chatbot WhatsApp com Upload de Arquivos\n"
+    
+    actor "Cliente" as User
+    rectangle "WhatsApp Cloud API" as WhatsApp $GREEN
+    rectangle "IBM Watson" as IBMWatson $RED
+    circle " " as Others
+    note right
+        Qualquer sistema pode reagir ao evento
+    end note
+   
+    rectangle "AWS" as AWS {
+           rectangle "Amazon API Gateway" as APIGateway $ORANGE
+           rectangle "VPC" {
+            rectangle "Sub-rede Pública" as PublicSubnet {
+                rectangle "Application Load Balancer" as LoadBalancer $ORANGE
+            }
+            rectangle "Sub-rede Privada" as PrivateSubnet {
+                rectangle "ECS Fargate Cluster" as Cluster {
+                    component "router-app" as RouterApp  $BLUE
+                    component "chatbot-app" as ChatbotApp $BLUE
+                    component "cache-manager-app" as CacheManagerApp $BLUE
+                    component "notification-app" as NotificationApp $BLUE
+                    component "file-storage-app" as FileStorageApp $BLUE
+                    component "data-storage-app" as DataStorageApp $BLUE
+                }
+                storage "Amazon Redis\nElastiCache" as Redis 
+            }
+           }
+
+        database  "\nDynamoDB\n" as DB $YELLOW   
+        rectangle "Amazon SNS" as SNS $PURPLE
+        storage "Amazon S3" as S3
+       
+        User --> WhatsApp
+        WhatsApp --> APIGateway
+        APIGateway --> LoadBalancer
+        LoadBalancer --> RouterApp
+
+        RouterApp --> CacheManagerApp
+        RouterApp --> NotificationApp
+        RouterApp --> FileStorageApp
+        RouterApp --> DataStorageApp
+        RouterApp --> ChatbotApp
+        
+        CacheManagerApp -r-> Redis
+        NotificationApp -d-> SNS
+        FileStorageApp -d-> S3
+        DataStorageApp -d-> DB
+        ChatbotApp -d-> IBMWatson
+        SNS <.. Others
+}
+@enduml
